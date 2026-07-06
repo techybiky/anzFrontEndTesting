@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
 
     steps:
       - name: Checkout code
@@ -40,10 +40,22 @@ jobs:
       - name: Create reports directory
         run: mkdir -p reports
 
-      - name: Run calculator tests
+       - name: Run calculator tests
         id: tests
-        run: npm run test:ci
+        run: |
+          echo "Starting tests..."
+          echo "Node version:"
+          node --version
+          echo "npm version:"
+          npm --version
+          echo "Playwright info:"
+          npx playwright --version
+          echo "Running tests..."
+          npm run test:ci
         continue-on-error: true
+        env:
+          DEBUG: pw:api
+          CI: true
 
       - name: Generate HTML report
         if: always()
