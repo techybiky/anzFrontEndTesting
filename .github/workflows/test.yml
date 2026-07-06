@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  checks: write
   pull-requests: write
 
 jobs:
@@ -43,20 +44,7 @@ jobs:
       - name: Run calculator tests
         id: tests
         run: |
-          echo "======================================"
-          echo "Starting Borrowing Calculator Tests"
-          echo "======================================"
-          echo "Node.js version: $(node --version)"
-          echo "npm version: $(npm --version)"
-          echo "Playwright version:"
-          npx playwright --version
-          echo "======================================"
-          echo "Running: npm run test:ci"
-          echo "======================================"
           npm run test:ci
-          echo "======================================"
-          echo "Tests completed"
-          echo "======================================"
         continue-on-error: true
         timeout-minutes: 10
 
