@@ -73,19 +73,16 @@ jobs:
             const fs = require('fs');
             const resultsPath = 'reports/results.json';
             let results = [];
-
             if (fs.existsSync(resultsPath)) {
               try {
                 results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
               } catch (error) {
-                console.warn(`Could not parse test results: ${error.message}`);
+                console.warn('Could not parse test results: ' + error.message);
               }
             }
-
             let totalScenarios = 0;
             let passedScenarios = 0;
             let failedScenarios = 0;
-
             results.forEach(feature => {
               if (feature.elements) {
                 feature.elements.forEach(scenario => {
@@ -93,7 +90,7 @@ jobs:
                   let passed = true;
                   if (scenario.steps) {
                     scenario.steps.forEach(step => {
-                      if (step.result?.status === 'failed') {
+                      if (step.result && step.result.status === 'failed') {
                         passed = false;
                       }
                     });
@@ -106,21 +103,16 @@ jobs:
                 });
               }
             });
-
             const passRate = totalScenarios > 0 ? ((passedScenarios / totalScenarios) * 100).toFixed(2) : 0;
-            const reportUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            
-            const comment = `## 🧪 Test Results
-
-| Metric | Count |
-|--------|-------|
-| **Total Scenarios** | ${totalScenarios} |
-| **Passed** ✅ | ${passedScenarios} |
-| **Failed** ❌ | ${failedScenarios} |
-| **Pass Rate** | ${passRate}% |
-
-[View Detailed Report](${reportUrl})`;
-
+            const reportUrl = 'https://github.com/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId;
+            const comment = '## Test Results\n\n' +
+              '| Metric | Count |\n' +
+              '|--------|-------|\n' +
+              '| **Total Scenarios** | ' + totalScenarios + ' |\n' +
+              '| **Passed** | ' + passedScenarios + ' |\n' +
+              '| **Failed** | ' + failedScenarios + ' |\n' +
+              '| **Pass Rate** | ' + passRate + '% |\n\n' +
+              '[View Detailed Report](' + reportUrl + ')';
             if (totalScenarios > 0) {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
