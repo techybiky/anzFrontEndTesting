@@ -23,10 +23,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -35,35 +35,50 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Install Playwright browsers
-        run: npx playwright install chromium
+        run: npx playwright install --with-deps
 
       - name: Create reports directory
         run: mkdir -p reports
 
-      - name: Run calculator tests
+      - name: Run Cucumber JS tests with Playwright
         id: tests
-        run: npm run test:ci
+        run: |
+          npx cucumber-js \
+            --require-module ts-node/register \
+            --require 'features/step_definitions/**/*.ts' \
+            --format json:reports/cucumber-report.json \
+            --format html:reports/cucumber-report.html \
+            --format progress-bar \
+            --parallel 2 \
+            features/
         continue-on-error: true
+        env:
+          BROWSER: chromium
+          HEADLESS: true
 
-      - name: Generate HTML report
+      - name: Convert Cucumber JSON to JUnit XML
         if: always()
-        run: npm run test:html || true
+        run: |
+          npm install --save-dev cucumber-junit-convert
+          npx cucumber-junit-convert -i reports/cucumber-report.json -o reports/junit.xml
+        continue-on-error: true
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.node-version }}
-          path: reports/
+          path: |
+            reports/
           if-no-files-found: warn
           retention-days: 30
 
       - name: Publish test results
-        if: always() && hashFiles('reports/results.xml') != ''
+        if: always() && hashFiles('reports/junit.xml') != ''
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          files: reports/results.xml
-          check_name: Test Results (${{ matrix.node-version }})
+          files: reports/junit.xml
+          check_name: Cucumber Tests (${{ matrix.node-version }})
 
       - name: Comment PR with test results
         if: always() && github.event_name == 'pull_request'
@@ -71,7 +86,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const resultsPath = 'reports/results.json';
+            const resultsPath = 'reports/cucumber-report.json';
             let results = [];
 
             if (fs.existsSync(resultsPath)) {
@@ -84,26 +99,52 @@ jobs:
 
             let totalScenarios = 0;
             let passedScenarios = 0;
+            let failedScenarios = 0;
+            let skippedScenarios = 0;
 
             results.forEach(feature => {
               if (feature.elements) {
                 feature.elements.forEach(scenario => {
                   totalScenarios++;
-                  let passed = true;
+                  let scenarioPassed = true;
+                  let scenarioSkipped = false;
+
                   if (scenario.steps) {
                     scenario.steps.forEach(step => {
                       if (step.result?.status === 'failed') {
-                        passed = false;
+                        scenarioPassed = false;
+                      }
+                      if (step.result?.status === 'skipped') {
+                        scenarioSkipped = true;
                       }
                     });
                   }
-                  if (passed) passedScenarios++;
+
+                  if (scenarioSkipped) {
+                    skippedScenarios++;
+                  } else if (scenarioPassed) {
+                    passedScenarios++;
+                  } else {
+                    failedScenarios++;
+                  }
                 });
               }
             });
 
             const passRate = totalScenarios > 0 ? ((passedScenarios / totalScenarios) * 100).toFixed(2) : 0;
-            const comment = `## 🧪 Test Results\n\n- **Total Scenarios**: ${totalScenarios}\n- **Passed**: ${passedScenarios}\n- **Failed**: ${totalScenarios - passedScenarios}\n- **Pass Rate**: ${passRate}%\n\n[View Detailed Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            const reportUrl = `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            
+            const comment = `## 🧪 Cucumber Test Results - Node ${{ matrix.node-version }}
+
+| Metric | Count |
+|--------|-------|
+| **Total Scenarios** | ${totalScenarios} |
+| **Passed** ✅ | ${passedScenarios} |
+| **Failed** ❌ | ${failedScenarios} |
+| **Skipped** ⊘ | ${skippedScenarios} |
+| **Pass Rate** | ${passRate}% |
+
+[View Detailed Report](${reportUrl})`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,

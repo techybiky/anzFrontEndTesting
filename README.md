@@ -58,7 +58,7 @@ FrontEndTesting/
 │   └── borrowingCalculatorPage.js         # Page Object Model for calculator actions
 ├── scripts/
 │   ├── generate-html-report.js            # Builds HTML report from JSON
-│   └── prepare-reports.js                 # Clears and creates reports folder
+│    
 ├── .gitignore                             # Files and folders ignored by Git
 ├── cucumber.js                            # Cucumber config and report outputs
 ├── LICENSE                                # Project license
