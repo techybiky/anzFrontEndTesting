@@ -5,13 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "cucumber-js",
-    "test:ci": "node -e \"require('fs').mkdirSync('reports', { recursive: true })\" && npx cucumber-js --format json:reports/results.json --format junit:reports/results.xml",
-    "test:html": "node scripts/generate-html-report.js",
-    "execute": "npm run test:ci"
+    "test:ci": "node -e \"require('fs').mkdirSync('reports', { recursive: true })\" && npx cucumber-js --format json:reports/results.json --format junit:reports/results.xml && node scripts/generate-html-report.js"
   },
   "devDependencies": {
     "@cucumber/cucumber": "^13.0.0",
     "@playwright/test": "^1.40.0",
+    "cucumber-html-reporter": "^7.2.0",
     "multiple-cucumber-html-reporter": "^3.10.0"
   }
 }
