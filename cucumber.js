@@ -5,8 +5,8 @@ module.exports = {
     format: [
       'progress-bar',
       'json:reports/results.json',
-      'message:reports/results.ndjson',
-      'junit:reports/results.xml'
+      'junit:reports/results.xml',
+      'html:reports/cucumber-report.html' 
     ],
     formatOptions: {
       snippetInterface: 'async-await'
