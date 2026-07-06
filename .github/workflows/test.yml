@@ -43,19 +43,22 @@ jobs:
       - name: Run calculator tests
         id: tests
         run: |
-          echo "Starting tests..."
-          echo "Node version:"
-          node --version
-          echo "npm version:"
-          npm --version
-          echo "Playwright info:"
+          echo "======================================"
+          echo "Starting Borrowing Calculator Tests"
+          echo "======================================"
+          echo "Node.js version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "Playwright version:"
           npx playwright --version
-          echo "Running tests..."
+          echo "======================================"
+          echo "Running: npm run test:ci"
+          echo "======================================"
           npm run test:ci
+          echo "======================================"
+          echo "Tests completed"
+          echo "======================================"
         continue-on-error: true
-        env:
-          DEBUG: pw:api
-          CI: true
+        timeout-minutes: 10
 
       - name: Generate HTML report
         if: always()
